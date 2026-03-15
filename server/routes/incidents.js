@@ -9,12 +9,19 @@ router.use(cookieparser())
 
 const pool = require('../config/postgres');
 
-router.get('/api/incidents', async (req, res) => {
-});
-router.get('/api/incidents/:id', async (req, res) => { });
+const {
+    getAllIncidents,
+    getIncidentById,
+    createIncident,
+    upvoteIncident,
+    deleteIncident
+} = require('../controllers/incidentControllers');
 
-router.post('/api/incidents', async (req, res) => { });
-
-router.post('/api/incidents/:id/upvote', async (req, res) => { });
+router.get('/api/incidents', getAllIncidents);
+router.get('/api/incidents/:id', getIncidentById);
+router.post('/api/incidents', createIncident);
+router.post('/api/incidents/:id/upvote', upvoteIncident);
+router.delete('/api/incidents/:id', deleteIncident);
 
 module.exports = router;
+
