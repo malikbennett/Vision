@@ -11,8 +11,9 @@ const authRoutes = require('./routes/auth');
 const incidentRoutes = require('./routes/incidents');
 
 
-router.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
+app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
+app.use(cookieparser());
 
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/auth', authRoutes);
