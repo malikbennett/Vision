@@ -6,6 +6,9 @@ const pool = require('../config/postgres')
 const generateRefreshToken = payload => {
     const token = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' })
     const hash = crypto.createHash('sha256').update(token).digest('hex')
+    // Delete existing tokens for this user to prevent redundancy
+    pool.query('DELETE FROM tokens WHERE user_id = $1', [payload.id]).catch(err => console.error('Cleanup error:', err))
+    
     pool.query('INSERT INTO tokens (user_id, token) VALUES ($1, $2)', [payload.id, hash]).catch(err => {
         console.error(err);
     })
