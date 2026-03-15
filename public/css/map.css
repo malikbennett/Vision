@@ -11,7 +11,7 @@
 
 .logout-btn {
   position: absolute;
-  top: 14px;
+  bottom: 80px;
   right: 14px;
   z-index: 1000;
   padding: 10px 14px;
@@ -329,15 +329,18 @@ body.light-mode .logout-btn:hover {
 }
 
 .user-location-marker {
-  background: #3b82f6;
-  border: 3px solid white;
-  border-radius: 50%;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
-  animation: userPulse 2s infinite ease-in-out;
+  background: #3b82f6 !important;
+  border: 3px solid white !important;
+  border-radius: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4) !important;
+  animation: userPulse 2s infinite ease-in-out !important;
+  pointer-events: none;
 }
 
 @keyframes userPulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); opacity: 1; }
+  70% { transform: scale(1.4); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); opacity: 0.8; }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); opacity: 1; }
 }
