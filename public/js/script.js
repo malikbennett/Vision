@@ -558,7 +558,7 @@ function makePopupHtml(incident) {
       ${imageHtml}
       
       <div class="popup-actions" style="margin-top:12px; border-top: 1px solid var(--border); padding-top:10px; display:flex; align-items:center; justify-content:space-between;">
-        <button class="vote-btn" onclick="toggleVote(${incident.id})" id="vote-btn-${incident.id}" title="Upvote this report">
+        <button class="vote-btn" onclick="toggleVote('${incident.id}')" id="vote-btn-${incident.id}" title="Upvote this report">
           <span class="vote-icon">▲</span>
           <span class="vote-count" id="vote-count-${incident.id}">${incident.upvote_count || 0}</span>
         </button>
