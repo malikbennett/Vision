@@ -252,3 +252,47 @@ body.light-mode .logout-btn:hover {
     padding: 8px;
   }
 }
+
+/* Marker Popup Vote Styles */
+.vote-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.vote-btn:hover {
+  background: var(--border);
+  transform: translateY(-1px);
+}
+
+.vote-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+
+.vote-icon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.vote-btn:active .vote-icon {
+  transform: scale(1.4);
+}
+
+.vote-count {
+  font-weight: bold;
+}
+
+.leaflet-popup-content-wrapper .popup-actions {
+    border-top: 1px solid var(--panel-border) !important;
+}
