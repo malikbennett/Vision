@@ -99,6 +99,7 @@ const SEVERITIES = [
 
 const incidents = [];
 const markerById = new Map();
+let userMarker = null; // To track user's current location marker
 
 let activeFilters = new Set(INCIDENT_TYPES.map((t) => t.key));
 let pendingLatLng = null;
@@ -227,6 +228,7 @@ const els = {
   imagePreview: document.getElementById("imagePreview"),
   removeImageBtn: document.getElementById("removeImageBtn"),
   uploadLabelText: document.getElementById("uploadLabelText"),
+  locateBtn: document.getElementById("locateBtn"),
 };
 
 // ========== SPAM PREVENTION ==========
@@ -776,6 +778,54 @@ window.addEventListener("DOMContentLoaded", () => {
   window.map = map;
 
   applyMapTheme();
+
+  // Geolocation Logic
+  function locateUser() {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    els.locateBtn.innerHTML = "📡"; // Visual feedback
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const latlng = [latitude, longitude];
+
+        // Center map and zoom
+        map.setView(latlng, 15);
+
+        // Update or create user marker
+        if (userMarker) {
+          userMarker.setLatLng(latlng);
+        } else {
+          const userIcon = L.divIcon({
+            className: 'user-location-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          userMarker = L.marker(latlng, { icon: userIcon, zIndexOffset: 2000 })
+            .bindPopup("<strong>You are here</strong>", { closeButton: false })
+            .addTo(map);
+        }
+        
+        els.locateBtn.innerHTML = "📍";
+      },
+      (err) => {
+        console.warn(`ERROR(${err.code}): ${err.message}`);
+        alert("Unable to retrieve your location. Check your GPS settings.");
+        els.locateBtn.innerHTML = "📍";
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+  }
+
+  els.locateBtn.onclick = locateUser;
 
   map.on("click", (e) => openPanel(e.latlng));
 });

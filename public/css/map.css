@@ -296,3 +296,48 @@ body.light-mode .logout-btn:hover {
 .leaflet-popup-content-wrapper .popup-actions {
     border-top: 1px solid var(--panel-border) !important;
 }
+
+.locate-btn {
+  position: absolute;
+  top: 80px;
+  right: 12px;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.locate-btn:hover {
+  transform: translateY(-2px);
+  background: var(--bg-soft);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.locate-btn:active {
+  transform: translateY(0);
+}
+
+.user-location-marker {
+  background: #3b82f6;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4);
+  animation: userPulse 2s infinite ease-in-out;
+}
+
+@keyframes userPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
