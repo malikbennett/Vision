@@ -17,10 +17,10 @@ const {
     deleteIncident
 } = require('../controllers/incidentController');
 
-router.get('/api/incidents', getAllIncidents);
-router.get('/api/incidents/:id', getIncidentById);
-router.post('/api/incidents', createIncident);
-router.post('/api/incidents/:id/upvote', upvoteIncident);
-router.delete('/api/incidents/:id', deleteIncident);
+router.get('/incidents', getAllIncidents);
+router.get('/incidents/:id', getIncidentById);
+router.post('/incidents', createIncident);
+router.post('/incidents/:id/upvote', upvoteIncident);
+router.delete('/incidents/:id', deleteIncident);
 
 module.exports = router;

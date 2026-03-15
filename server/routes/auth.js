@@ -13,8 +13,8 @@ const bcrypt = require('bcrypt');
 const { handleRegistration, handleLogin } = require('../controllers/authControllers');
 const authenticateAccessToken = require('../middleware/authenticateAccessToken');
 
-router.post('/api/auth/register', handleRegistration);
+router.post('/register', handleRegistration);
 
-router.post('/api/auth/login', handleLogin);
+router.post('/login', handleLogin);
 
 module.exports = router;
