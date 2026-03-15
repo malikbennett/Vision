@@ -3,7 +3,7 @@ require('dotenv').config()
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
 
-const pool = require('../db')
+const pool = require('../config/postgres')
 const generateAccessToken = require('../util/generateAccessToken')
 const generateRefreshToken = require('../util/generateRefreshToken')
 
@@ -18,8 +18,8 @@ const handleRegistration = async (req, res) => {
         // GETS USER DATA
         const userData = await pool.query('SELECT id, email FROM users WHERE email = $1', [user.email])
         const payload = { id: userData.rows[0].id, email: userData.rows[0].email }
-        const accessToken = await bcrypt.hash(generateAccessToken(payload), 10)
-        const refreshToken = await bcrypt.hash(generateRefreshToken(payload), 10)
+        const accessToken = generateAccessToken(payload)
+        const refreshToken = generateRefreshToken(payload)
         console.log(accessToken)
         console.log(refreshToken)
         res.cookie('token', accessToken, {
@@ -75,7 +75,8 @@ const handleLogin = async (req, res) => {
 }
 
 const handleRefreshToken = async (refresh) => {
-    const tokenData = await pool.query('SELECT * FROM tokens WHERE token = $1', [refresh])
+    const hash = crypto.createHash('sha256').update(refresh).digest('hex')
+    const tokenData = await pool.query('SELECT * FROM tokens WHERE token = $1', [hash])
     if (!tokenData.rows || tokenData.rows.length === 0) return { status: 403, message: 'Forbinden Refresh Token | Logout required' }
     const dbToken = tokenData.rows[0]
     console.log('Refresh Token found in database', dbToken)
@@ -103,4 +104,4 @@ const handleRefreshToken = async (refresh) => {
     }
 }
 
-module.exports = { handleRegistration, handleRefreshToken }
+module.exports = { handleRegistration, handleLogin, handleRefreshToken }
