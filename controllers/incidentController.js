@@ -50,11 +50,12 @@ const getIncidentById = async (req, res) => {
 // ======================================================
 const createIncident = async (req, res) => {
     try {
-        const { user, incident } = req.body;
+        const { incident } = req.body;
+        const user_id = req.user.id;
 
-        if (!user.id || !incident.type || incident.latitude == null || incident.longitude == null) {
+        if (!incident.type || incident.latitude == null || incident.longitude == null) {
             return res.status(400).json({
-                message: 'user_id, type, latitude, and longitude are required'
+                message: 'type, latitude, and longitude are required'
             });
         }
 
@@ -65,17 +66,19 @@ const createIncident = async (req, res) => {
                 description,
                 latitude,
                 longitude,
-                severity
+                severity,
+                location_name
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `, [
-            user.id,
+            user_id,
             incident.type,
             incident.description || null,
             incident.latitude,
             incident.longitude,
             incident.severity || null,
+            incident.locationName || null
         ]);
 
         res.status(201).json({

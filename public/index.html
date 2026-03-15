@@ -1,32 +1,21 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vision — Community Incident Report</title>
-
-  <!-- Leaflet JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <!-- Link to external CSS -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/index.css" />
+  <title>Vision — Community Incident Report</title>x
 </head>
-
-<body>
+<body class="light-mode">
   <!-- THEME TOGGLE -->
   <button id="themeToggleBtn" class="theme-toggle-global" title="Toggle Light/Dark Mode">☀️</button>
 
   <!-- LANDING PAGE SCREEN -->
-  <div id="landingScreen" class="screen active">
     <div class="landing-container">
       <div class="landing-content">
-        <div class="landing-icon">👁️👁️</div>
         <h1 class="landing-title">Vision</h1>
         <p class="landing-subtitle">Community-Driven Incident Reporting</p>
-
         <div class="features-list">
           <div class="feature-item">
             <span class="feature-icon">🗺️</span>
@@ -57,161 +46,11 @@
             </div>
           </div>
         </div>
-
         <button id="getStartedBtn" class="btn-large">Get Started</button>
         <p class="landing-footer">Keeping Jamaica safe, one report at a time</p>
       </div>
     </div>
-  </div>
-
-  <!-- LOGIN SCREEN -->
-  <div id="loginScreen" class="screen">
-    <div class="login-container">
-      <div class="login-card">
-        <button id="backToLandingBtn" class="back-btn">← Back</button>
-
-        <div class="login-header">
-          <div class="login-icon">👁️👁️</div>
-          <h2>Welcome Back</h2>
-          <p>Sign in to your Vision account</p>
-        </div>
-
-        <form id="loginForm" class="login-form">
-          <div class="form-group">
-            <label for="loginEmail">Email Address</label>
-            <input type="email" id="loginEmail" placeholder="your@email.com" required />
-          </div>
-
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" placeholder="••••••••" required />
-          </div>
-
-          <div class="form-error" id="loginError"></div>
-
-          <button type="submit" class="btn-primary">Sign In</button>
-        </form>
-
-        <div class="login-divider">or</div>
-
-        <button id="signupToggleBtn" class="btn-secondary">Create New Account</button>
-
-        <p class="login-footer">Secure login powered by Vision</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- SIGNUP SCREEN -->
-  <div id="signupScreen" class="screen">
-    <div class="login-container">
-      <div class="login-card">
-        <button id="backToLoginBtn" class="back-btn">← Back</button>
-
-        <div class="login-header">
-          <div class="login-icon">👁️👁️</div>
-          <h2>Join Vision</h2>
-          <p>Create your account in seconds</p>
-        </div>
-
-        <form id="signupForm" class="login-form">
-          <div class="form-group">
-            <label for="signupName">Full Name</label>
-            <input type="text" id="signupName" placeholder="Your name" required />
-          </div>
-
-          <div class="form-group">
-            <label for="signupEmail">Email Address</label>
-            <input type="email" id="signupEmail" placeholder="your@email.com" required />
-          </div>
-
-          <div class="form-group">
-            <label for="signupPassword">Password</label>
-            <input type="password" id="signupPassword" placeholder="••••••••" required />
-          </div>
-
-          <div class="form-group">
-            <label for="signupConfirm">Confirm Password</label>
-            <input type="password" id="signupConfirm" placeholder="••••••••" required />
-          </div>
-
-          <div class="form-error" id="signupError"></div>
-
-          <button type="submit" class="btn-primary">Create Account</button>
-        </form>
-
-        <p class="login-footer">Your privacy is important to us</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- APP SCREEN (Map) -->
-  <div id="appScreen" class="screen">
-    <div class="app">
-      <div id="map"></div>
-
-      <div class="topbar">
-        <div class="chip-row" id="filterRow" aria-label="Incident type filters"></div>
-      </div>
-
-      <aside class="panel" id="panel" aria-label="New report panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <h2>New Report</h2>
-            <p class="coords" id="coordsText">Click the map to set a location</p>
-          </div>
-          <button class="close-btn" id="closePanelBtn" title="Close">✕</button>
-        </div>
-
-        <div class="panel-body">
-          <div class="section-label">Incident Type</div>
-          <div class="btn-group" id="typeButtons"></div>
-
-          <div class="section-label">Severity</div>
-          <div class="btn-group" id="severityButtons"></div>
-
-          <div class="section-label">Description</div>
-          <textarea id="desc" maxlength="280" placeholder="Describe what's happening…"></textarea>
-          <div class="hint"><span id="charsLeft">280</span> characters left</div>
-
-          <div class="section-label">Optional Photo</div>
-          <label class="file-upload-btn" tabindex="0">
-            <span id="uploadLabelText">📷 Add a Picture</span>
-            <input type="file" id="imageUpload" accept="image/*"
-              style="opacity: 0; position: absolute; width: 0; height: 0;" />
-          </label>
-          <div id="imagePreviewContainer" class="image-preview" style="display: none;">
-            <img id="imagePreview" src="" alt="Selected photo" />
-            <button class="remove-image-btn" id="removeImageBtn" type="button" title="Remove photo">✕</button>
-          </div>
-
-          <div class="actions">
-            <button class="ghost" id="clearBtn" type="button">Clear</button>
-            <button class="primary" id="submitBtn" type="button">Broadcast Incident</button>
-          </div>
-
-          <div class="hint" id="dailyLimitBox"
-            style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);">
-            20 reports remaining today
-          </div>
-
-          <div class="error" id="errorBox"></div>
-        </div>
-      </aside>
-
-      <div class="brand" title="Vision Community Incident Reporter">
-        <div class="brand-badge">V</div>
-        <div>
-          <div style="font-weight: 900; letter-spacing: 0.2px">VISION</div>
-          <small>Community Safety</small>
-        </div>
-      </div>
-
-      <button id="logoutBtn" class="logout-btn" title="Logout">🚪 Logout</button>
-    </div>
-  </div>
-
-  <!-- Link to external JavaScript -->
-  <script src="script.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/script.js"></script>
 </body>
-
 </html>

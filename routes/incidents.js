@@ -1,12 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const cookieparser = require('cookie-parser')
-const cors = require('cors');
-
-router.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
-router.use(express.json())
-router.use(cookieparser())
-
+// Middlewares already applied in server.js, removing redundant calls here
 const pool = require('../config/postgres');
 
 const {
@@ -17,10 +11,12 @@ const {
     deleteIncident
 } = require('../controllers/incidentController');
 
+const authenticateAccessToken = require('../middleware/authenticateAccessToken');
+
 router.get('/', getAllIncidents);
 router.get('/:id', getIncidentById);
-router.post('/', createIncident);
+router.post('/', authenticateAccessToken, createIncident);
 router.post('/:id/upvote', upvoteIncident);
-router.delete('/:id', deleteIncident);
+router.delete('/:id', authenticateAccessToken, deleteIncident);
 
 module.exports = router;

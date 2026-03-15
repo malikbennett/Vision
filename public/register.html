@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <title>Document</title>
+</head>
+<body class="light-mode">
+    <div class="login-container">
+      <div class="login-card">
+        <button id="backToLoginBtn" class="back-btn">← Back</button>
+
+        <div class="login-header">
+          <h2>Join Vision</h2>
+          <p>Create your account in seconds</p>
+        </div>
+
+        <form id="signupForm" class="login-form">
+          <div class="form-group">
+            <label for="signupName">Username</label>
+            <input type="text" id="signupName" placeholder="username" required />
+          </div>
+
+          <div class="form-group">
+            <label for="signupEmail">Email Address</label>
+            <input type="email" id="signupEmail" placeholder="your@email.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="signupPassword">Password</label>
+            <input type="password" id="signupPassword" placeholder="••••••••" required />
+          </div>
+
+          <div class="form-group">
+            <label for="signupConfirm">Confirm Password</label>
+            <input type="password" id="signupConfirm" placeholder="••••••••" required />
+          </div>
+
+          <div class="form-error" id="signupError"></div>
+
+          <button type="submit" class="btn-primary">Create Account</button>
+        </form>
+
+        <p class="login-footer">Your privacy is important to us</p>
+      </div>
+    </div>
+    <script src="js/auth.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

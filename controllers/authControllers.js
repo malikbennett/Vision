@@ -10,17 +10,18 @@ const generateRefreshToken = require('../util/generateRefreshToken')
 const issueTokens = (res, payload) => {
     const accessToken = generateAccessToken(payload)
     const refreshToken = generateRefreshToken(payload)
+    const isSecure = process.env.NODE_ENV === 'production';
     res.cookie('token', accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'None',
+        secure: isSecure,
+        sameSite: isSecure ? 'None' : 'Lax',
         path: '/',
         maxAge: 15 * 60 * 1000
     })
     res.cookie('refresh', refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'None',
+        secure: isSecure,
+        sameSite: isSecure ? 'None' : 'Lax',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000
     })
@@ -77,8 +78,8 @@ const handleRefreshToken = async (refresh) => {
             access: {
                 name: 'token', token: newAccessToken, attributes: {
                     httpOnly: true,
-                    secure: true,
-                    sameSite: 'None',
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                     path: '/',
                     maxAge: 15 * 60 * 1000
                 }

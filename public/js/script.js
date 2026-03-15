@@ -1,5 +1,5 @@
 // ========== DEBUGGING ==========
-window.addEventListener('error', function(e) {
+window.addEventListener('error', function (e) {
   alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
 });
 
@@ -19,11 +19,11 @@ function setTheme(isLight) {
       if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
       localStorage.setItem('vision_theme', 'dark');
     }
-    
+
     if (window.map) {
       if (currentTileLayer) window.map.removeLayer(currentTileLayer);
       if (currentLabelLayer) window.map.removeLayer(currentLabelLayer);
-      
+
       // Esri World Imagery (Free Satellite)
       currentTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri',
@@ -37,7 +37,7 @@ function setTheme(isLight) {
         maxZoom: 20,
         pane: 'markerPane' // ensure it sits above the satellite imagery mostly
       }).addTo(window.map);
-      
+
       const tilePane = window.map.getPane('tilePane');
       const labelPane = window.map.getPane('markerPane');
       if (tilePane) {
@@ -58,12 +58,12 @@ function setTheme(isLight) {
 // Initial theme setup
 try {
   const savedTheme = localStorage.getItem('vision_theme');
-  const mql = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
-  const prefersLight = mql ? mql.matches : false;
-  if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
-    setTheme(true);
-  } else {
+  // Default to light if no preference is found
+  if (savedTheme === 'dark') {
     setTheme(false);
+  } else {
+    // This covers 'light' or null (new user)
+    setTheme(true);
   }
 } catch (e) {
   console.error('Theme Init Error:', e);
@@ -78,137 +78,37 @@ if (themeToggleBtn) {
 
 // ========== SCREEN NAVIGATION ==========
 
-function showScreen(screenId) {
-  document.querySelectorAll('.screen').forEach(screen => {
-    screen.classList.remove('active');
+// Landing Screen Navigation
+const getStartedBtn = document.getElementById('getStartedBtn');
+if (getStartedBtn) {
+  getStartedBtn.addEventListener('click', () => {
+    window.location.href = 'login.html';
   });
-  document.getElementById(screenId).classList.add('active');
-
-  // Ensure Leaflet resizes correctly when the map screen is shown
-  if (screenId === 'appScreen' && window.map) {
-    // Small timeout ensures CSS transitions/display block have applied
-    setTimeout(() => map.invalidateSize(), 100);
-  }
 }
 
-// Landing Screen Navigation
-document.getElementById('getStartedBtn').addEventListener('click', () => {
-  showScreen('loginScreen');
-});
-
 // Login Screen Navigation
-document.getElementById('backToLandingBtn').addEventListener('click', () => {
-  showScreen('landingScreen');
-  document.getElementById('loginForm').reset();
-  document.getElementById('loginError').classList.remove('show');
-});
+const backToLandingBtn = document.getElementById('backToLandingBtn');
+if (backToLandingBtn) {
+  backToLandingBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+}
 
-document.getElementById('signupToggleBtn').addEventListener('click', () => {
-  showScreen('signupScreen');
-  document.getElementById('loginForm').reset();
-  document.getElementById('loginError').classList.remove('show');
-});
+const signupToggleBtn = document.getElementById('signupToggleBtn');
+if (signupToggleBtn) {
+  signupToggleBtn.addEventListener('click', () => {
+    window.location.href = 'register.html';
+  });
+}
 
 // Signup Screen Navigation
-document.getElementById('backToLoginBtn').addEventListener('click', () => {
-  showScreen('loginScreen');
-  document.getElementById('signupForm').reset();
-  document.getElementById('signupError').classList.remove('show');
-});
+const backToLoginBtn = document.getElementById('backToLoginBtn');
+if (backToLoginBtn) {
+  backToLoginBtn.addEventListener('click', () => {
+    window.location.href = 'login.html';
+  });
+}
 
-// ========== AUTHENTICATION ==========
-
-const users = JSON.parse(localStorage.getItem('vision_users')) || {};
-let currentUser = null;
-
-// Login Form Handler
-document.getElementById('loginForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const errorBox = document.getElementById('loginError');
-
-  if (!email || !password) {
-    errorBox.textContent = 'Please enter email and password';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  if (!users[email] || users[email].password !== password) {
-    errorBox.textContent = 'Invalid email or password';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  // Login successful
-  currentUser = { email, name: users[email].name };
-  localStorage.setItem('vision_currentUser', JSON.stringify(currentUser));
-  showScreen('appScreen');
-  document.getElementById('loginForm').reset();
-  errorBox.classList.remove('show');
-});
-
-// Signup Form Handler
-document.getElementById('signupForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  const name = document.getElementById('signupName').value;
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const confirm = document.getElementById('signupConfirm').value;
-  const errorBox = document.getElementById('signupError');
-
-  if (!name || !email || !password || !confirm) {
-    errorBox.textContent = 'Please fill in all fields';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  if (password !== confirm) {
-    errorBox.textContent = 'Passwords do not match';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  if (password.length < 6) {
-    errorBox.textContent = 'Password must be at least 6 characters';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  if (users[email]) {
-    errorBox.textContent = 'Email already registered';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  // Create account
-  users[email] = { name, password };
-  localStorage.setItem('vision_users', JSON.stringify(users));
-
-  // Auto-login
-  currentUser = { email, name };
-  localStorage.setItem('vision_currentUser', JSON.stringify(currentUser));
-  showScreen('appScreen');
-  document.getElementById('signupForm').reset();
-});
-
-// Logout Handler
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  currentUser = null;
-  localStorage.removeItem('vision_currentUser');
-  showScreen('landingScreen');
-});
-
-// Check if already logged in
-window.addEventListener('load', () => {
-  const saved = localStorage.getItem('vision_currentUser');
-  if (saved) {
-    currentUser = JSON.parse(saved);
-    showScreen('appScreen');
-  }
-});
 
 // ========== INCIDENT TYPES & SEVERITIES ==========
 
@@ -243,8 +143,8 @@ const MAX_DAILY_REPORTS = 20;
 const MAX_REPORTS_PER_MIN = 5;
 const COOLDOWN_SECONDS = 60;
 
-let lastReportTime = 0; 
-let recentReports = []; 
+let lastReportTime = 0;
+let recentReports = [];
 let cooldownTimer = null;
 
 // ========== DOM ELEMENTS ==========
@@ -290,7 +190,7 @@ function updateDailyLimitUI() {
   if (!els.dailyLimitBox) return;
   const remaining = Math.max(0, MAX_DAILY_REPORTS - getDailyCount());
   els.dailyLimitBox.textContent = `${remaining} report${remaining === 1 ? '' : 's'} remaining today`;
-  
+
   if (remaining === 0) {
     els.dailyLimitBox.style.color = "var(--danger)";
     els.submitBtn.disabled = true;
@@ -308,12 +208,12 @@ function updateDailyLimitUI() {
 
 function startCooldown() {
   if (cooldownTimer) clearInterval(cooldownTimer);
-  
+
   let timeLeft = COOLDOWN_SECONDS;
   els.submitBtn.disabled = true;
   els.submitBtn.style.opacity = "0.7";
   els.submitBtn.style.cursor = "not-allowed";
-  
+
   const tick = () => {
     els.submitBtn.textContent = `Wait ${timeLeft} seconds...`;
     timeLeft--;
@@ -321,7 +221,7 @@ function startCooldown() {
       clearInterval(cooldownTimer);
       cooldownTimer = null;
       els.submitBtn.textContent = "Broadcast Incident";
-      updateDailyLimitUI(); 
+      updateDailyLimitUI();
     }
   };
   tick();
@@ -330,40 +230,40 @@ function startCooldown() {
 
 function checkSpamRules(newIncident) {
   const now = Date.now();
-  
+
   // 1. Daily Limit
   if (getDailyCount() >= MAX_DAILY_REPORTS) {
     return "You've reached your daily limit. Try again tomorrow!";
   }
-  
+
   // 2. Cooldown Timer
   if (now - lastReportTime < COOLDOWN_SECONDS * 1000) {
     const wait = Math.ceil(COOLDOWN_SECONDS - (now - lastReportTime) / 1000);
     return `Must wait ${wait} seconds between reports.`;
   }
-  
+
   // 3. Per-Minute Rate Limit
   recentReports = recentReports.filter(time => now - time < 60000);
   if (recentReports.length >= MAX_REPORTS_PER_MIN) {
     return "You are reporting too fast. Please slow down (Max 5 per minute).";
   }
-  
+
   // 4. Duplicate Detection
   const fiveMinsAgo = new Date(now - 5 * 60000).toISOString();
   const recentIncidents = incidents.filter(i => i.created_at >= fiveMinsAgo);
-  
+
   const isDuplicate = recentIncidents.some(i => {
     const latDiff = Math.abs(i.latitude - newIncident.latitude);
     const lngDiff = Math.abs(i.longitude - newIncident.longitude);
-    return i.type === newIncident.type && 
-           i.description === newIncident.description &&
-           latDiff < 0.0001 && lngDiff < 0.0001;
+    return i.type === newIncident.type &&
+      i.description === newIncident.description &&
+      latDiff < 0.0001 && lngDiff < 0.0001;
   });
-  
+
   if (isDuplicate) {
     return "This exact incident was already reported nearby recently.";
   }
-  
+
   return null;
 }
 
@@ -592,7 +492,7 @@ function addIncidentToMap(incident) {
 
   // Add flashing entrance animation if new (less than 10s old)
   const isNew = Date.now() - new Date(incident.created_at).getTime() < 10000;
-  if(isNew) {
+  if (isNew) {
     el.style.animation = 'pulseGlow 2s infinite';
   }
 
@@ -644,6 +544,9 @@ function applyMarkerFilters() {
 let map;
 
 window.addEventListener("DOMContentLoaded", () => {
+  const mapContainer = document.getElementById('map');
+  if (!mapContainer) return;
+
   // Render UI components
   renderFilters();
   renderTypeButtons();
@@ -715,7 +618,7 @@ window.addEventListener("DOMContentLoaded", () => {
     els.uploadLabelText.textContent = "📷 Add a Picture";
   });
 
-  els.submitBtn.onclick = () => {
+  els.submitBtn.onclick = async () => {
     const err = validateForm();
     if (err) {
       els.errorBox.textContent = err;
@@ -723,41 +626,75 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const incident = {
-      id: crypto.randomUUID(),
+    const incidentData = {
       type: selectedType,
       severity: selectedSeverity,
       description: els.desc.value.trim(),
       latitude: pendingLatLng.lat,
       longitude: pendingLatLng.lng,
       locationName: pendingLocationName,
-      created_at: new Date().toISOString(),
       image: pendingImageURL, // Save the base64 image data
     };
 
-    const spamError = checkSpamRules(incident);
-    if (spamError) {
-      els.errorBox.textContent = spamError;
+    try {
+      const response = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ incident: incidentData })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save incident');
+      }
+
+      const { incident } = await response.json();
+
+      // Record Spam Data locally for UX (though server should handle it too)
+      const now = Date.now();
+      lastReportTime = now;
+      recentReports.push(now);
+      incrementDailyCount();
+
+      incidents.push(incident);
+      addIncidentToMap(incident);
+      applyMarkerFilters();
+
+      clearForm();
+      closePanel();
+
+      // Start Cooldown in background so button is disabled when reopened
+      startCooldown();
+    } catch (err) {
+      console.error(err);
+      els.errorBox.textContent = "Error saving incident to database.";
       els.errorBox.style.display = "block";
-      return;
     }
-
-    // Record Spam Data
-    const now = Date.now();
-    lastReportTime = now;
-    recentReports.push(now);
-    incrementDailyCount();
-
-    incidents.push(incident);
-    addIncidentToMap(incident);
-    applyMarkerFilters();
-
-    clearForm();
-    closePanel();
-    
-    // Start Cooldown in background so button is disabled when reopened
-    startCooldown();
   };
+
+  // Initial fetch from backend
+  async function initIncidents() {
+    try {
+      const response = await fetch('/api/incidents');
+      if (response.ok) {
+        const data = await response.json();
+        data.forEach(inc => {
+          // Normalize names if necessary (backend uses snake_case usually)
+          const normalized = {
+            ...inc,
+            locationName: inc.location_name,
+            created_at: inc.created_at
+          };
+          incidents.push(normalized);
+          addIncidentToMap(normalized);
+        });
+        applyMarkerFilters();
+      }
+    } catch (err) {
+      console.error('Failed to load incidents:', err);
+    }
+  }
+
+  initIncidents();
 
   // Initialize Leaflet map (Jamaica - Kingston area)
   map = L.map('map', { zoomControl: false }).setView([18.0179, -76.8099], 10);
@@ -767,20 +704,4 @@ window.addEventListener("DOMContentLoaded", () => {
   setTheme(document.body.classList.contains('light-mode'));
 
   map.on("click", (e) => openPanel(e.latlng));
-
-  // Add demo marker
-  const demo = {
-    id: crypto.randomUUID(),
-    type: "accident",
-    severity: "medium",
-    description: "Demo marker — click map to add a real one.",
-    latitude: 17.997,
-    longitude: -76.793,
-    created_at: new Date().toISOString(),
-  };
-  incidents.push(demo);
-
-  map.on('load', () => {
-    addIncidentToMap(demo);
-  });
 });

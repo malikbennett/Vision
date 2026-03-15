@@ -1,12 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const cors = require('cors');
-const cookieparser = require('cookie-parser')
-
-router.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }))
-router.use(express.json())
-router.use(cookieparser())
-
+// Middlewares already applied in server.js, removing redundant calls here
 const pool = require('../config/postgres');
 const bcrypt = require('bcrypt');
 
@@ -16,5 +10,16 @@ const authenticateAccessToken = require('../middleware/authenticateAccessToken')
 router.post('/register', handleRegistration);
 
 router.post('/login', handleLogin);
+
+router.get('/me', authenticateAccessToken, (req, res) => {
+    // If the middleware passes, the user is authenticated.
+    res.status(200).json({ isAuthenticated: true, user: req.user });
+});
+
+router.post('/logout', (req, res) => {
+    res.cookie('token', '', { expires: new Date(0) });
+    res.cookie('refresh', '', { expires: new Date(0) });
+    res.status(200).json({ message: 'Logged out successfully' });
+});
 
 module.exports = router;

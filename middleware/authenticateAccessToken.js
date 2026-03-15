@@ -1,7 +1,7 @@
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 
-const handleRefreshToken = require('../controllers/authControllers')
+const { handleRefreshToken } = require('../controllers/authControllers')
 
 const authenticateAccessToken = async (req, res, next) => {
     if (!req.cookies.refresh) return res.status(401).json({ isAuthenticated: false, message: `Refresh Token not found | User not Logged In` })
