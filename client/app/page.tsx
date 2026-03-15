@@ -1,171 +1,105 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import type * as L from 'leaflet';
-
-// Dynamically import leaflet on client-side only
-const Leaflet = typeof window !== 'undefined' ? require('leaflet') : null;
-
-interface IncidentType {
-  key: string;
-  label: string;
-  color: string;
-}
-
-interface Severity {
-  key: string;
-  label: string;
-}
+import { useState, useEffect } from 'react';
+import './styles.css';
+import LandingScreen from './components/LandingScreen';
+import LoginScreen from './components/LoginScreen';
+import SignupScreen from './components/SignupScreen';
+import MapComponent from './components/MapComponent';
+import ThemeToggle from './components/ThemeToggle';
+import { login, logout } from './utils/auth';
 
 interface Incident {
   id: string;
   type: string;
-  severity: string;
-  description: string;
+  severity?: string;
+  description?: string;
   latitude: number;
   longitude: number;
-  created_at: string;
+  created_at?: string;
+  location?: string;
+  price?: string;
+  parish?: string;
+  details?: string;
+  riskLevel?: string;
 }
 
-const INCIDENT_TYPES: IncidentType[] = [
-  { key: "accident", label: "Accident", color: "#ff4d4d" },
-  { key: "hazard", label: "Hazard", color: "#f5a524" },
-  { key: "crime", label: "Crime", color: "#3b82f6" },
-  { key: "flood", label: "Flood", color: "#22c55e" },
-  { key: "other", label: "Other", color: "#a78bfa" },
+const INCIDENT_TYPES = [
+  { key: "crime", label: "Crime", color: "#e74c3c" },
+  { key: "crash", label: "Road Crash", color: "#f39c12" },
+  { key: "hazard", label: "Hazard", color: "#3498db" },
 ];
 
-const SEVERITIES: Severity[] = [
-  { key: "low", label: "Low" },
-  { key: "medium", label: "Medium" },
-  { key: "high", label: "High" },
+const PARISHES = [
+  "All Parishes",
+  "Kingston West",
+  "Kingston East",
+  "Kingston Central",
+  "St. Andrew South",
+  "St. Andrew North",
+  "St. Andrew Central",
+  "St. Andrew West",
+  "St. Catherine South",
+  "St. James",
+  "Westmoreland"
 ];
 
 export default function Home() {
-  const mapRef = useRef<L.Map | null>(null);
-  const incidentsRef = useRef<Incident[]>([]);
-  const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
-  
+  const [currentScreen, setCurrentScreen] = useState<'landing' | 'login' | 'signup' | 'app'>('landing');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(INCIDENT_TYPES.map(t => t.key)));
-  const [pendingLatLng, setPendingLatLng] = useState<L.LatLng | null>(null);
-  const [selectedType, setSelectedType] = useState<string>("hazard");
-  const [selectedSeverity, setSelectedSeverity] = useState<string>("medium");
-  const [description, setDescription] = useState<string>("");
-  const [charsLeft, setCharsLeft] = useState<number>(280);
-  const [errorBox, setErrorBox] = useState<string>("");
-  const [panelOpen, setPanelOpen] = useState<boolean>(false);
-  const [isMounted, setIsMounted] = useState(false);
 
+  // Load incidents from API
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && Leaflet && !mapRef.current) {
-      // Initialize map centered on Jamaica
-      mapRef.current = Leaflet.map('map').setView([18.1096, -77.2975], 9);
-      
-      // Add dark mode tile layer (CartoDB Dark Matter)
-      Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-      }).addTo(mapRef.current);
-
-      // Map click handler
-      mapRef.current!.on('click', (e) => {
-        openPanel(e.latlng);
-      });
+    if (currentScreen === 'app') {
+      fetchIncidents();
     }
+  }, [currentScreen]);
 
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    setCharsLeft(280 - description.length);
-  }, [description]);
-
-  const typeMeta = (typeKey: string): IncidentType => {
-    return INCIDENT_TYPES.find(t => t.key === typeKey) ?? INCIDENT_TYPES[0];
-  };
-
-  const openPanel = (latlng: L.LatLng) => {
-    setPendingLatLng(latlng);
-    setPanelOpen(true);
-    setErrorBox("");
-  };
-
-  const closePanel = () => {
-    setPanelOpen(false);
-    setPendingLatLng(null);
-    setDescription("");
-    setSelectedType("hazard");
-    setSelectedSeverity("medium");
-    setErrorBox("");
-  };
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    if (value.length <= 280) {
-      setDescription(value);
+  const fetchIncidents = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/incidents');
+      if (!response.ok) throw new Error('Failed to fetch');
+      const data = await response.json();
+      console.log('Fetched incidents:', data.length);
+      setIncidents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching incidents:', error);
+      setIncidents([]);
     }
   };
 
-  const handleSubmit = () => {
-    if (!pendingLatLng) {
-      setErrorBox("Please select a location on the map");
-      return;
-    }
-
-    if (!description.trim()) {
-      setErrorBox("Description cannot be empty");
-      return;
-    }
-
-    const newIncident: Incident = {
-      id: crypto.randomUUID(),
-      type: selectedType,
-      severity: selectedSeverity,
-      description: description.trim(),
-      latitude: pendingLatLng.lat,
-      longitude: pendingLatLng.lng,
-      created_at: new Date().toISOString(),
-    };
-
-    incidentsRef.current.push(newIncident);
-    addMarkerToMap(newIncident);
-    closePanel();
+  const handleGetStarted = () => {
+    setCurrentScreen('login');
   };
 
-  const addMarkerToMap = (incident: Incident) => {
-    if (!mapRef.current || !Leaflet) return;
+  const handleLoginSuccess = (email: string) => {
+    const user = login(email);
+    setUserEmail(user.email);
+    setUserName(user.name);
+    setIsLoggedIn(true);
+    setCurrentScreen('app');
+  };
 
-    const meta = typeMeta(incident.type);
-    const marker = Leaflet.circleMarker([incident.latitude, incident.longitude], {
-      radius: 12,
-      fillColor: meta.color,
-      color: 'rgba(255,255,255,0.8)',
-      weight: 2,
-      opacity: 1,
-      fillOpacity: 0.7,
-    }).addTo(mapRef.current);
+  const handleSignupSuccess = (name: string, email: string) => {
+    const user = login(email, name);
+    setUserEmail(user.email);
+    setUserName(user.name);
+    setIsLoggedIn(true);
+    setCurrentScreen('app');
+  };
 
-    marker.bindPopup(`
-      <div style="min-width: 200px;">
-        <strong style="color: ${meta.color}; font-size: 14px;">${meta.label}</strong><br/>
-        <span style="font-size: 12px; opacity: 0.8;">Severity: ${incident.severity}</span><br/>
-        <p style="margin: 8px 0 0 0; font-size: 13px;">${incident.description}</p>
-        <small style="opacity: 0.6; display: block; margin-top: 8px;">${new Date(incident.created_at).toLocaleString()}</small>
-      </div>
-    `);
-
-    markersRef.current.set(incident.id, marker);
+  const handleLogout = () => {
+    logout();
+    setIsLoggedIn(false);
+    setUserEmail('');
+    setUserName('');
+    setCurrentScreen('landing');
   };
 
   const toggleFilter = (typeKey: string) => {
@@ -176,422 +110,255 @@ export default function Home() {
       newFilters.add(typeKey);
     }
     setActiveFilters(newFilters);
-
-    // Update marker visibility
-    markersRef.current.forEach((marker, id) => {
-      const incident = incidentsRef.current.find(i => i.id === id);
-      if (incident) {
-        if (newFilters.has(incident.type)) {
-          marker.addTo(mapRef.current!);
-        } else {
-          marker.remove();
-        }
-      }
-    });
   };
 
-  const clearForm = () => {
-    setDescription("");
-    setSelectedType("hazard");
-    setSelectedSeverity("medium");
-    setErrorBox("");
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    } else {
+      const hours = Math.floor(diffMins / 60);
+      return `${hours}h ago`;
+    }
   };
 
+  const typeMeta = (typeKey: string) => {
+    return INCIDENT_TYPES.find(t => t.key === typeKey) || INCIDENT_TYPES[0];
+  };
+
+  // Render based on current screen
+  if (currentScreen === 'landing') {
+    return (
+      <>
+        <div id="landingScreen" className="screen active">
+          <LandingScreen onGetStarted={handleGetStarted} />
+        </div>
+        <ThemeToggle />
+      </>
+    );
+  }
+
+  if (currentScreen === 'login') {
+    return (
+      <>
+        <div id="loginScreen" className="screen active">
+          <div className="login-container">
+            <LoginScreen 
+              onBack={() => setCurrentScreen('landing')}
+              onSignupClick={() => setCurrentScreen('signup')}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          </div>
+        </div>
+        <ThemeToggle />
+      </>
+    );
+  }
+
+  if (currentScreen === 'signup') {
+    return (
+      <>
+        <div id="signupScreen" className="screen active">
+          <div className="login-container">
+            <SignupScreen 
+              onBack={() => setCurrentScreen('login')}
+              onSignupSuccess={handleSignupSuccess}
+            />
+          </div>
+        </div>
+        <ThemeToggle />
+      </>
+    );
+  }
+
+  // App Screen
   return (
-    <div className="app">
-      <div id="map" suppressHydrationWarning={true}></div>
-
-      {/* Top Filter Bar */}
-      <div className="topbar">
-        <div className="chip-row" id="filterRow" aria-label="Incident type filters" suppressHydrationWarning={true}>
-          {INCIDENT_TYPES.map((type) => (
-            <button
-              key={type.key}
-              className={`chip ${activeFilters.has(type.key) ? 'active' : ''}`}
-              onClick={() => toggleFilter(type.key)}
-              style={{ borderLeft: `3px solid ${type.color}` }}
-            >
-              <span className="dot" style={{ backgroundColor: type.color }}></span>
-              {type.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Side Panel */}
-      <aside className={`panel ${panelOpen ? 'open' : ''}`} id="panel" aria-label="New report panel">
-        <div className="panel-header">
-          <div className="panel-title">
-            <h2>New Report</h2>
-            <p className="coords" id="coordsText" suppressHydrationWarning={true}>
-              {pendingLatLng ? `${pendingLatLng.lat.toFixed(5)}, ${pendingLatLng.lng.toFixed(5)}` : 'Click the map to set a location'}
-            </p>
-          </div>
-          <button className="close-btn" onClick={closePanel} title="Close">✕</button>
-        </div>
-
-        <div className="panel-body">
-          <div className="section-label">Incident Type</div>
-          <div className="btn-group" id="typeButtons">
-            {INCIDENT_TYPES.map((type) => (
-              <button
-                key={type.key}
-                className={`seg-btn ${selectedType === type.key ? 'selected' : ''}`}
-                onClick={() => setSelectedType(type.key)}
-                style={{ 
-                  borderColor: selectedType === type.key ? type.color : undefined,
-                  boxShadow: selectedType === type.key ? `0 0 0 2px ${type.color}33 inset` : undefined
-                }}
-              >
-                {type.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="section-label">Severity</div>
-          <div className="btn-group" id="severityButtons">
-            {SEVERITIES.map((sev) => (
-              <button
-                key={sev.key}
-                className={`seg-btn ${selectedSeverity === sev.key ? 'selected' : ''}`}
-                onClick={() => setSelectedSeverity(sev.key)}
-              >
-                {sev.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="section-label">Description</div>
-          <textarea
-            id="desc"
-            maxLength={280}
-            placeholder="Describe what's happening…"
-            value={description}
-            onChange={handleDescriptionChange}
+    <>
+      <div id="appScreen" className="screen active">
+        <div className="app">
+          <MapComponent 
+            incidents={incidents.filter((i) => activeFilters.has(i.type))}
+            typeColors={INCIDENT_TYPES.map((t) => ({ key: t.key, color: t.color }))}
+            activeFilters={activeFilters}
+            selectedIncident={selectedIncident}
+            onMarkerClick={(incident) => {
+              setSelectedIncident(incident);
+              setPanelOpen(true);
+            }}
           />
-          <div className="hint" suppressHydrationWarning={true}>
-            <span id="charsLeft">{charsLeft}</span> characters left
+
+          <button type="button" className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+
+          <div className="topbar">
+            <div className="chip-row">
+              {INCIDENT_TYPES.map((type) => (
+                <button
+                  key={type.key}
+                  type="button"
+                  className={`chip ${activeFilters.has(type.key) ? 'active' : ''}`}
+                  onClick={() => toggleFilter(type.key)}
+                  aria-pressed={activeFilters.has(type.key)}
+                >
+                  <span className="dot" style={{ backgroundColor: type.color, minWidth: '12px', minHeight: '12px', border: '2px solid white', boxShadow: '0 0 6px rgba(0,0,0,0.5)' }} />
+                  {type.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="actions">
-            <button className="ghost" id="clearBtn" type="button" onClick={clearForm}>
-              Clear
-            </button>
-            <button className="primary" id="submitBtn" type="button" onClick={handleSubmit}>
-              Broadcast Incident
-            </button>
+          <button
+            type="button"
+            className="sidebar-toggle-btn"
+            onClick={() => setPanelOpen((o) => !o)}
+            aria-label={panelOpen ? 'Close list' : 'Open list'}
+            title={panelOpen ? 'Close list' : 'Open list'}
+          >
+            {panelOpen ? '✕' : '☰'}
+          </button>
+
+          <div className={`panel ${selectedIncident || panelOpen ? 'open' : ''}`}>
+            {(selectedIncident || panelOpen) ? (
+              <>
+                <div className="panel-header">
+                  <div className="panel-title">
+                    <h2>{selectedIncident ? typeMeta(selectedIncident.type).label : 'Incidents'}</h2>
+                    <p className="coords">
+                      {selectedIncident
+                        ? `${selectedIncident.latitude?.toFixed(4)}, ${selectedIncident.longitude?.toFixed(4)}`
+                        : 'Select a spot on the map or list'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="close-btn"
+                    onClick={() => {
+                      setSelectedIncident(null);
+                      setPanelOpen(false);
+                    }}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="panel-body">
+                  {selectedIncident && (
+                  <div className="featured">
+                    <div className="featured-img">
+                      <div className="featured-img-inner">
+                        <span className="incident-icon-big">📍</span>
+                      </div>
+                      <div className="badge-hot">HOT</div>
+                      <div className="rating-badge">★ 4.8</div>
+                    </div>
+                    <div className="featured-body">
+                      <div className="featured-title">{typeMeta(selectedIncident.type).label}</div>
+                      <div className="featured-addr">
+                        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/></svg>
+                        {selectedIncident.location || 'Unknown location'}
+                      </div>
+                      <div className="meta-row">
+                        <div className="meta-item">{selectedIncident.created_at ? formatTime(selectedIncident.created_at) : 'Recently'}</div>
+                        <div className="meta-item">Verified</div>
+                      </div>
+                      <div className="featured-desc">{selectedIncident.description || 'No description available'}</div>
+                      <div className="price-row">
+                        <span className="price-label">Impact Level</span>
+                        <span className="price-val">
+                          <span className="severity-dot" style={{ backgroundColor: typeMeta(selectedIncident.type).color }} />
+                          {selectedIncident.price || '—'}
+                        </span>
+                      </div>
+                      <div className="action-row">
+                        <button type="button" className="btn-primary-small" onClick={() => {
+                          if (selectedIncident) {
+                            setSelectedIncident(selectedIncident);
+                            setPanelOpen(true);
+                          }
+                        }}>View Details</button>
+                        <button type="button" className="btn-icon">❤</button>
+                        <button type="button" className="btn-icon">🔗</button>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+              {/* Thumbnails - only when an incident is selected */}
+              {selectedIncident && (
+              <div className="thumbs">
+                <div className="thumb active-thumb">
+                  <div className="thumb-img">📍</div>
+                  <div className="thumb-label">Main View</div>
+                  <div className="thumb-sub">On-site</div>
+                </div>
+                <div className="thumb">
+                  <div className="thumb-img">🗺️</div>
+                  <div className="thumb-label">Map</div>
+                  <div className="thumb-sub">Overview</div>
+                </div>
+                <div className="thumb">
+                  <div className="thumb-img">📊</div>
+                  <div className="thumb-label">Data</div>
+                  <div className="thumb-sub">Analytics</div>
+                </div>
+              </div>
+              )}
+
+              {/* Incident List */}
+              <div className="list-header">Recent Incidents ({incidents.length})</div>
+              <div className="incident-list">
+                {incidents.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>
+                    No incidents reported yet
+                  </div>
+                ) : (
+                  incidents.map((incident) => (
+                    <div
+                      key={incident.id}
+                      className={`inc-row ${selectedIncident?.id === incident.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedIncident(incident);
+                        setPanelOpen(true);
+                      }}
+                    >
+                      <div 
+                        className="inc-dot-wrap"
+                        style={{ backgroundColor: `${typeMeta(incident.type).color}33`, color: typeMeta(incident.type).color }}
+                      >
+                        {incident.type === 'crime' && '👮'}
+                        {incident.type === 'crash' && '🚗'}
+                        {incident.type === 'hazard' && '⚠️'}
+                      </div>
+                      <div className="inc-info">
+                        <div className="inc-type">{typeMeta(incident.type).label}</div>
+                        <div className="inc-loc">{incident.location || 'Unknown location'}</div>
+                        <div className="inc-time">{incident.created_at ? formatTime(incident.created_at) : 'Recently'}</div>
+                      </div>
+                      <div className="inc-heart">♥</div>
+                    </div>
+                  ))
+                )}
+              </div>
+                </div>
+              </>
+                ) : null}
           </div>
 
-          <div className="error" id="errorBox" style={{ display: errorBox ? 'block' : 'none' }}>
-            {errorBox}
+          <div className="brand">
+            <div className="brand-badge">V</div>
+            <div>
+              <strong>Vision</strong>
+              <small>Incident reporting</small>
+            </div>
           </div>
-        </div>
-      </aside>
-
-      {/* Brand Badge */}
-      <div className="brand" title="MVP UI (frontend only)">
-        <div className="brand-badge">V</div>
-        <div>
-          <div style={{ fontWeight: 900, letterSpacing: '0.2px' }}>VISION</div>
-          <small>Jamaica map — MVP UI</small>
         </div>
       </div>
-
-      <style jsx global>{`
-        :root {
-          --bg: #0b1220;
-          --panel: rgba(16, 24, 40, 0.92);
-          --panel-border: rgba(255, 255, 255, 0.08);
-          --text: rgba(255, 255, 255, 0.92);
-          --muted: rgba(255, 255, 255, 0.65);
-          --chip: rgba(255, 255, 255, 0.10);
-          --chip-active: rgba(255, 255, 255, 0.18);
-          --accent: #f5a524;
-          --danger: #ff4d4d;
-        }
-
-        * {
-          box-sizing: border-box;
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        }
-
-        html,
-        body {
-          height: 100%;
-          margin: 0;
-          background: var(--bg);
-          color: var(--text);
-        }
-
-        .app {
-          position: relative;
-          height: 100%;
-          width: 100%;
-          overflow: hidden;
-        }
-
-        #map {
-          height: 100%;
-          width: 100%;
-        }
-
-        /* Top filter bar */
-        .topbar {
-          position: absolute;
-          top: 14px;
-          left: 14px;
-          right: 14px;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          pointer-events: none;
-        }
-
-        .chip-row {
-          display: flex;
-          gap: 10px;
-          padding: 10px;
-          border: 1px solid var(--panel-border);
-          background: rgba(10, 16, 28, 0.65);
-          backdrop-filter: blur(8px);
-          border-radius: 999px;
-          pointer-events: auto;
-          overflow-x: auto;
-          max-width: min(980px, 100%);
-        }
-
-        .chip {
-          border: 1px solid var(--panel-border);
-          background: var(--chip);
-          color: var(--text);
-          padding: 10px 14px;
-          border-radius: 999px;
-          cursor: pointer;
-          user-select: none;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 600;
-          white-space: nowrap;
-          transition: transform 120ms ease, background 120ms ease;
-        }
-
-        .chip:hover {
-          transform: translateY(-1px);
-          background: var(--chip-active);
-        }
-
-        .chip.active {
-          border-color: rgba(245, 165, 36, 0.45);
-          background: rgba(245, 165, 36, 0.12);
-        }
-
-        .dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 999px;
-          display: inline-block;
-        }
-
-        /* Side panel */
-        .panel {
-          position: absolute;
-          top: 14px;
-          right: 14px;
-          width: min(420px, calc(100% - 28px));
-          max-height: calc(100% - 28px);
-          z-index: 1000;
-          border: 1px solid var(--panel-border);
-          background: var(--panel);
-          backdrop-filter: blur(10px);
-          border-radius: 18px;
-          overflow: hidden;
-          display: none;
-        }
-
-        .panel.open {
-          display: block;
-        }
-
-        .panel-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 16px 10px 16px;
-          border-bottom: 1px solid var(--panel-border);
-        }
-
-        .panel-title {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .panel-title h2 {
-          font-size: 18px;
-          margin: 0;
-          letter-spacing: 0.2px;
-        }
-
-        .coords {
-          font-size: 12px;
-          color: var(--muted);
-          margin: 0;
-        }
-
-        .close-btn {
-          border: 1px solid var(--panel-border);
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--text);
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          cursor: pointer;
-        }
-
-        .panel-body {
-          padding: 14px 16px 16px 16px;
-          overflow: auto;
-          max-height: calc(100% - 64px);
-        }
-
-        .section-label {
-          color: var(--muted);
-          font-size: 12px;
-          font-weight: 700;
-          letter-spacing: 0.4px;
-          margin: 14px 0 8px 0;
-          text-transform: uppercase;
-        }
-
-        .grid-2 {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-
-        .btn-group {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .seg-btn {
-          flex: 1;
-          min-width: 120px;
-          border: 1px solid var(--panel-border);
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--text);
-          padding: 12px 12px;
-          border-radius: 12px;
-          cursor: pointer;
-          font-weight: 700;
-          text-align: center;
-        }
-
-        .seg-btn.selected {
-          border-color: rgba(245, 165, 36, 0.55);
-          box-shadow: 0 0 0 2px rgba(245, 165, 36, 0.12) inset;
-        }
-
-        textarea,
-        input[type="text"] {
-          width: 100%;
-          border: 1px solid var(--panel-border);
-          background: rgba(255, 255, 255, 0.05);
-          color: var(--text);
-          border-radius: 12px;
-          padding: 12px;
-          outline: none;
-          resize: vertical;
-        }
-
-        textarea {
-          min-height: 90px;
-          max-height: 220px;
-        }
-
-        .hint {
-          font-size: 12px;
-          color: var(--muted);
-          margin-top: 6px;
-        }
-
-        .actions {
-          display: flex;
-          gap: 10px;
-          margin-top: 14px;
-        }
-
-        .primary {
-          flex: 1;
-          border: 0;
-          background: var(--accent);
-          color: #161616;
-          font-weight: 900;
-          padding: 12px 14px;
-          border-radius: 12px;
-          cursor: pointer;
-        }
-
-        .ghost {
-          border: 1px solid var(--panel-border);
-          background: rgba(255, 255, 255, 0.06);
-          color: var(--text);
-          font-weight: 800;
-          padding: 12px 14px;
-          border-radius: 12px;
-          cursor: pointer;
-        }
-
-        .error {
-          margin-top: 10px;
-          color: var(--danger);
-          font-size: 13px;
-          font-weight: 700;
-          display: none;
-        }
-
-        /* Small brand badge */
-        .brand {
-          position: absolute;
-          left: 14px;
-          bottom: 14px;
-          z-index: 1000;
-          border: 1px solid var(--panel-border);
-          background: rgba(10, 16, 28, 0.65);
-          backdrop-filter: blur(8px);
-          border-radius: 14px;
-          padding: 10px 12px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .brand-badge {
-          width: 34px;
-          height: 34px;
-          border-radius: 12px;
-          display: grid;
-          place-items: center;
-          background: rgba(245, 165, 36, 0.15);
-          border: 1px solid rgba(245, 165, 36, 0.35);
-          font-weight: 900;
-          color: var(--accent);
-        }
-
-        /* Leaflet popups */
-        .leaflet-popup-content-wrapper,
-        .leaflet-popup-tip {
-          background: rgba(16, 24, 40, 0.95);
-          color: var(--text);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .leaflet-container a {
-          color: var(--accent);
-        }
-      `}</style>
-    </div>
+      <ThemeToggle />
+    </>
   );
 }
