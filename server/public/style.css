@@ -1,0 +1,17 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  position: relative;
+  overflow: hidden;
+}
+
+#map {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 100vh;
+  z-index: 0;
+}
