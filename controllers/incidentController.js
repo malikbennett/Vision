@@ -178,6 +178,12 @@ const upvoteIncident = async (req, res) => {
         `, [user_id, id]);
 
         // Increment incident upvote_count
+        await pool.query(`
+            UPDATE incidents
+            SET upvote_count = upvote_count + 1
+            WHERE id = $1
+        `, [id]);
+
         // Fetch full data with username for broadcast
         const incidentRows = await pool.query(`
             SELECT i.*, u.username
@@ -224,6 +230,12 @@ const downvoteIncident = async (req, res) => {
         `, [user_id, id]);
 
         // Decrement incident upvote_count
+        await pool.query(`
+            UPDATE incidents
+            SET upvote_count = upvote_count - 1
+            WHERE id = $1
+        `, [id]);
+
         // Fetch full data with username for broadcast
         const incidentRows = await pool.query(`
             SELECT i.*, u.username
