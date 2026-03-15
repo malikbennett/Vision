@@ -29,6 +29,7 @@ body {
   margin: 0;
   background: radial-gradient(circle at center, rgba(11, 18, 32, 0.6) 0%, rgba(11, 18, 32, 0.95) 100%), url('bg2.png') center/cover no-repeat fixed;
   color: var(--text);
+  overflow: hidden;
 }
 
 body::before {
