@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const pool = require('../db');
+const pool = require('../config/postgres');
 
 // ======================================================
 // GET ALL ACTIVE INCIDENTS

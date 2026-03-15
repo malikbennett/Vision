@@ -15,7 +15,7 @@ const {
     createIncident,
     upvoteIncident,
     deleteIncident
-} = require('../controllers/incidentControllers');
+} = require('../controllers/incidentController');
 
 router.get('/api/incidents', getAllIncidents);
 router.get('/api/incidents/:id', getIncidentById);
@@ -24,4 +24,3 @@ router.post('/api/incidents/:id/upvote', upvoteIncident);
 router.delete('/api/incidents/:id', deleteIncident);
 
 module.exports = router;
-
