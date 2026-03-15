@@ -11,7 +11,8 @@ const authRoutes = require('./routes/auth');
 const incidentRoutes = require('./routes/incidents');
 
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieparser());
 
 app.use('/api/incidents', (req, res, next) => {

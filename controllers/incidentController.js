@@ -1,6 +1,8 @@
 require('dotenv').config();
 
 const pool = require('../config/postgres');
+const supabase = require('../config/supabase');
+const crypto = require('crypto');
 
 // ======================================================
 // GET ALL ACTIVE INCIDENTS
@@ -50,10 +52,10 @@ const getIncidentById = async (req, res) => {
 // ======================================================
 const createIncident = async (req, res) => {
     try {
-        const { incident } = req.body;
+        const incident = req.body;
         const user_id = req.user.id;
 
-        if (!incident.type || incident.latitude == null || incident.longitude == null) {
+        if (!incident.type || !incident.latitude || !incident.longitude) {
             return res.status(400).json({
                 message: 'type, latitude, and longitude are required'
             });
@@ -81,14 +83,45 @@ const createIncident = async (req, res) => {
             incident.locationName || null
         ]);
 
-        const createdIncident = newIncident.rows[0];
+        let imageUrl = null;
+        const createdIncidentId = newIncident.rows[0].id;
+
+        // Handle Image Upload to Supabase if file exists
+        if (req.file) {
+            const file = req.file;
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `${createdIncidentId}-${crypto.randomBytes(8).toString('hex')}.${fileExt}`;
+            const filePath = `incidents/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from('incident-images')
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: false
+                });
+
+            if (error) {
+                console.error('Supabase upload error:', error);
+            } else {
+                const { data: { publicUrl } } = supabase.storage
+                    .from('incident-images')
+                    .getPublicUrl(filePath);
+                
+                imageUrl = publicUrl;
+
+                // Update the incident with the image URL
+                await pool.query('UPDATE incidents SET image = $1 WHERE id = $2', [imageUrl, createdIncidentId]);
+            }
+        }
+
+        const finalIncident = (await pool.query('SELECT * FROM incidents WHERE id = $1', [createdIncidentId])).rows[0];
 
         // Broadcast to all connected clients
-        req.io.emit('new_incident', createdIncident);
+        req.io.emit('new_incident', finalIncident);
 
         res.status(201).json({
             message: 'Incident created successfully',
-            incident: createdIncident
+            incident: finalIncident
         });
     } catch (error) {
         console.error('Error creating incident:', error);

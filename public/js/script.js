@@ -105,7 +105,8 @@ let pendingLatLng = null;
 let pendingLocationName = "";
 let selectedType = "hazard";
 let selectedSeverity = "medium";
-let pendingImageURL = null;
+let pendingImageURL = null; // Still used for preview
+let pendingImageFile = null; // Actual file for upload
 
 // ========== RATE LIMITING STATE ==========
 const MAX_DAILY_REPORTS = 20;
@@ -642,6 +643,8 @@ window.addEventListener("DOMContentLoaded", () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    pendingImageFile = file; // Store the file for upload
+
     if (file.size > 20 * 1024 * 1024) { // 20MB limit
       els.errorBox.textContent = "Image must be smaller than 20MB.";
       els.errorBox.style.display = "block";
@@ -677,6 +680,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   els.removeImageBtn.addEventListener("click", () => {
     pendingImageURL = null;
+    pendingImageFile = null;
     els.imageUpload.value = "";
     els.imagePreviewContainer.style.display = "none";
     els.imagePreview.src = "";
@@ -691,21 +695,25 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const incidentData = {
-      type: selectedType,
-      severity: selectedSeverity,
-      description: els.desc.value.trim(),
-      latitude: pendingLatLng.lat,
-      longitude: pendingLatLng.lng,
-      locationName: pendingLocationName,
-      image: pendingImageURL, // Save the base64 image data
-    };
+    // Use FormData for file upload support
+    const formData = new FormData();
+    formData.append('type', selectedType);
+    formData.append('severity', selectedSeverity);
+    formData.append('description', els.desc.value.trim());
+    formData.append('latitude', pendingLatLng.lat);
+    formData.append('longitude', pendingLatLng.lng);
+    formData.append('locationName', pendingLocationName);
+    
+    if (pendingImageFile) {
+      formData.append('image', pendingImageFile);
+    }
 
     try {
       const response = await fetch('/api/incidents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ incident: incidentData })
+        // Note: Don't set Content-Type header when sending FormData!
+        // Browser will set it automatically with the correct boundary.
+        body: formData
       });
 
       if (!response.ok) {
