@@ -99,7 +99,6 @@ const SEVERITIES = [
 
 const incidents = [];
 const markerById = new Map();
-let userMarker = null; // To track user's current location marker
 
 let activeFilters = new Set(INCIDENT_TYPES.map((t) => t.key));
 let pendingLatLng = null;
@@ -795,20 +794,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
         // Center map and zoom
         map.setView(latlng, 15);
-
-        // Update or create user marker
-        if (userMarker) {
-          userMarker.setLatLng(latlng);
-        } else {
-          const userIcon = L.divIcon({
-            className: 'user-location-marker',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-          });
-          userMarker = L.marker(latlng, { icon: userIcon, zIndexOffset: 2000 })
-            .bindPopup("<strong>You are here</strong>", { closeButton: false })
-            .addTo(map);
-        }
         
         els.locateBtn.innerHTML = "📍";
       },
