@@ -25,9 +25,11 @@ interface Incident {
 }
 
 const INCIDENT_TYPES = [
+  { key: "all", label: "All", color: "#2ecc71" },
   { key: "crime", label: "Crime", color: "#e74c3c" },
-  { key: "crash", label: "Road Crash", color: "#f39c12" },
-  { key: "hazard", label: "Hazard", color: "#3498db" },
+  { key: "accident", label: "Accident", color: "#f39c12" },
+  { key: "flood", label: "Flood", color: "#3498db" },
+  { key: "hazard", label: "Others", color: "#9b59b6" },
 ];
 
 const PARISHES = [
@@ -52,7 +54,7 @@ export default function Home() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(INCIDENT_TYPES.map(t => t.key)));
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
 
   // Load incidents from API
   useEffect(() => {
@@ -104,10 +106,27 @@ export default function Home() {
 
   const toggleFilter = (typeKey: string) => {
     const newFilters = new Set(activeFilters);
-    if (newFilters.has(typeKey)) {
-      newFilters.delete(typeKey);
+    if (typeKey === 'all') {
+      // If clicking "All", clear other filters and set only all
+      if (newFilters.has('all')) {
+        // If all is already active, don't allow deselecting it
+        return;
+      } else {
+        newFilters.clear();
+        newFilters.add('all');
+      }
     } else {
-      newFilters.add(typeKey);
+      // Remove 'all' when selecting specific categories
+      newFilters.delete('all');
+      if (newFilters.has(typeKey)) {
+        newFilters.delete(typeKey);
+        // If no filters left, add 'all' back
+        if (newFilters.size === 0) {
+          newFilters.add('all');
+        }
+      } else {
+        newFilters.add(typeKey);
+      }
     }
     setActiveFilters(newFilters);
   };
@@ -181,7 +200,10 @@ export default function Home() {
       <div id="appScreen" className="screen active">
         <div className="app">
           <MapComponent 
-            incidents={incidents.filter((i) => activeFilters.has(i.type))}
+            incidents={incidents.filter((i) => {
+              if (activeFilters.has('all')) return true;
+              return activeFilters.has(i.type);
+            })}
             typeColors={INCIDENT_TYPES.map((t) => ({ key: t.key, color: t.color }))}
             activeFilters={activeFilters}
             selectedIncident={selectedIncident}
@@ -331,8 +353,10 @@ export default function Home() {
                         style={{ backgroundColor: `${typeMeta(incident.type).color}33`, color: typeMeta(incident.type).color }}
                       >
                         {incident.type === 'crime' && '👮'}
-                        {incident.type === 'crash' && '🚗'}
+                        {incident.type === 'accident' && '🚗'}
+                        {incident.type === 'flood' && '🌊'}
                         {incident.type === 'hazard' && '⚠️'}
+                        {incident.type === 'all' && '📍'}
                       </div>
                       <div className="inc-info">
                         <div className="inc-type">{typeMeta(incident.type).label}</div>
