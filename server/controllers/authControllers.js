@@ -17,6 +17,7 @@ const handleRegistration = async (req, res) => {
         console.log(data.rows[0]);
         // GETS USER DATA
         const userData = await pool.query('SELECT id, email FROM users WHERE email = $1', [user.email])
+        console.log(userData.rows[0]);
         const payload = { id: userData.rows[0].id, email: userData.rows[0].email }
         const accessToken = generateAccessToken(payload)
         const refreshToken = generateRefreshToken(payload)
