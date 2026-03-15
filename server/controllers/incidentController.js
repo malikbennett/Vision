@@ -50,18 +50,9 @@ const getIncidentById = async (req, res) => {
 // ======================================================
 const createIncident = async (req, res) => {
     try {
-        const {
-            user_id,
-            type,
-            description,
-            latitude,
-            longitude,
-            photo_url,
-            severity,
-            expires_at
-        } = req.body;
+        const { user, incident } = req.body;
 
-        if (!user_id || !type || latitude == null || longitude == null) {
+        if (!user.id || !incident.type || incident.latitude == null || incident.longitude == null) {
             return res.status(400).json({
                 message: 'user_id, type, latitude, and longitude are required'
             });
@@ -74,25 +65,17 @@ const createIncident = async (req, res) => {
                 description,
                 latitude,
                 longitude,
-                photo_url,
-                severity,
-                upvote_count,
-                is_active,
-                expires_at
+                severity
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `, [
-            user_id,
-            type,
-            description || null,
-            latitude,
-            longitude,
-            photo_url || null,
-            severity || null,
-            0,
-            true,
-            expires_at || null
+            user.id,
+            incident.type,
+            incident.description || null,
+            incident.latitude,
+            incident.longitude,
+            incident.severity || null,
         ]);
 
         res.status(201).json({
@@ -112,9 +95,9 @@ const createIncident = async (req, res) => {
 const upvoteIncident = async (req, res) => {
     try {
         const { id } = req.params; // incident id
-        const { user_id } = req.body;
+        const { user } = req.body;
 
-        if (!user_id) {
+        if (!user.id) {
             return res.status(400).json({
                 message: 'user_id is required'
             });
@@ -138,7 +121,7 @@ const upvoteIncident = async (req, res) => {
             SELECT *
             FROM upvotes
             WHERE user_id = $1 AND incident_id = $2
-        `, [user_id, id]);
+        `, [user.id, id]);
 
         if (existingVote.rows.length > 0) {
             return res.status(400).json({
@@ -150,7 +133,7 @@ const upvoteIncident = async (req, res) => {
         await pool.query(`
             INSERT INTO upvotes (user_id, incident_id)
             VALUES ($1, $2)
-        `, [user_id, id]);
+        `, [user.id, id]);
 
         // Increment incident upvote_count
         const updatedIncident = await pool.query(`
