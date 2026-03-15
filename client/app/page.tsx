@@ -29,7 +29,7 @@ const INCIDENT_TYPES = [
   { key: "crime", label: "Crime", color: "#e74c3c" },
   { key: "accident", label: "Accident", color: "#f39c12" },
   { key: "flood", label: "Flood", color: "#3498db" },
-  { key: "hazard", label: "Others", color: "#9b59b6" },
+  { key: "hazard", label: "Hazard ▼", color: "#9b59b6" },
 ];
 
 const PARISHES = [
@@ -55,6 +55,29 @@ export default function Home() {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set(['all']));
+  const [hazardDropdownOpen, setHazardDropdownOpen] = useState(false);
+
+  // Hazard sub-categories
+  const HAZARD_TYPES = [
+    { key: "hurricane", label: "Hurricane", icon: "🌀", color: "#9b59b6" },
+    { key: "fire", label: "Fire", icon: "🔥", color: "#e67e22" },
+    { key: "landslide", label: "Landslide", icon: "🏔️", color: "#1abc9c" },
+    { key: "earthquake", label: "Earthquake", icon: "🌋", color: "#34495e" },
+    { key: "sinkhole", label: "Sinkhole", icon: "🕳️", color: "#95a5a6" },
+  ];
+
+  // Close hazard dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (hazardDropdownOpen) {
+        setHazardDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [hazardDropdownOpen]);
 
   // Load incidents from API
   useEffect(() => {
@@ -114,6 +137,20 @@ export default function Home() {
       } else {
         newFilters.clear();
         newFilters.add('all');
+      }
+    } else if (['hurricane', 'fire', 'landslide', 'earthquake', 'sinkhole'].includes(typeKey)) {
+      // Hazard sub-categories - also enable parent hazard filter
+      newFilters.delete('all');
+      newFilters.add('hazard');
+      if (newFilters.has(typeKey)) {
+        newFilters.delete(typeKey);
+      } else {
+        newFilters.add(typeKey);
+      }
+      // If no hazard sub-filters left, remove hazard parent too
+      const hasAnyHazard = ['hurricane', 'fire', 'landslide', 'earthquake', 'sinkhole'].some(k => newFilters.has(k));
+      if (!hasAnyHazard) {
+        newFilters.delete('hazard');
       }
     } else {
       // Remove 'all' when selecting specific categories
@@ -202,9 +239,18 @@ export default function Home() {
           <MapComponent 
             incidents={incidents.filter((i) => {
               if (activeFilters.has('all')) return true;
-              return activeFilters.has(i.type);
+              // Check if main category is selected
+              if (activeFilters.has(i.type)) return true;
+              // For hazard sub-types, check if parent hazard filter is active
+              if (['hurricane', 'fire', 'landslide', 'earthquake', 'sinkhole'].includes(i.type)) {
+                return activeFilters.has('hazard') && activeFilters.has(i.type);
+              }
+              return false;
             })}
-            typeColors={INCIDENT_TYPES.map((t) => ({ key: t.key, color: t.color }))}
+            typeColors={[
+              ...INCIDENT_TYPES.map((t) => ({ key: t.key, color: t.color })),
+              ...HAZARD_TYPES.map((t) => ({ key: t.key, color: t.color }))
+            ]}
             activeFilters={activeFilters}
             selectedIncident={selectedIncident}
             onMarkerClick={(incident) => {
@@ -220,16 +266,70 @@ export default function Home() {
           <div className="topbar">
             <div className="chip-row">
               {INCIDENT_TYPES.map((type) => (
-                <button
-                  key={type.key}
-                  type="button"
-                  className={`chip ${activeFilters.has(type.key) ? 'active' : ''}`}
-                  onClick={() => toggleFilter(type.key)}
-                  aria-pressed={activeFilters.has(type.key)}
-                >
-                  <span className="dot" style={{ backgroundColor: type.color, minWidth: '12px', minHeight: '12px', border: '2px solid white', boxShadow: '0 0 6px rgba(0,0,0,0.5)' }} />
-                  {type.label}
-                </button>
+                <div key={type.key} style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    className={`chip ${activeFilters.has(type.key) ? 'active' : ''}`}
+                    onClick={() => {
+                      if (type.key === 'hazard') {
+                        setHazardDropdownOpen(!hazardDropdownOpen);
+                      } else {
+                        toggleFilter(type.key);
+                      }
+                    }}
+                    aria-pressed={activeFilters.has(type.key)}
+                  >
+                    <span className="dot" style={{ backgroundColor: type.color, minWidth: '12px', minHeight: '12px', border: '2px solid white', boxShadow: '0 0 6px rgba(0,0,0,0.5)' }} />
+                    {type.label}
+                  </button>
+                  
+                  {/* Hazard Dropdown */}
+                  {type.key === 'hazard' && hazardDropdownOpen && (
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        marginTop: '8px',
+                        background: 'rgba(16, 24, 40, 0.95)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '8px',
+                        zIndex: 1001,
+                        minWidth: '160px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {HAZARD_TYPES.map((hazardType) => (
+                        <button
+                          key={hazardType.key}
+                          type="button"
+                          onClick={() => toggleFilter(hazardType.key)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            width: '100%',
+                            padding: '8px 12px',
+                            margin: '4px 0',
+                            background: activeFilters.has(hazardType.key) ? 'rgba(155, 89, 182, 0.2)' : 'transparent',
+                            border: `1px solid ${activeFilters.has(hazardType.key) ? hazardType.color : 'rgba(255, 255, 255, 0.1)'}`,
+                            borderRadius: '8px',
+                            color: 'var(--text)',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <span style={{ fontSize: '16px' }}>{hazardType.icon}</span>
+                          <span>{hazardType.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -355,6 +455,11 @@ export default function Home() {
                         {incident.type === 'crime' && '👮'}
                         {incident.type === 'accident' && '🚗'}
                         {incident.type === 'flood' && '🌊'}
+                        {incident.type === 'hurricane' && '🌀'}
+                        {incident.type === 'fire' && '🔥'}
+                        {incident.type === 'landslide' && '🏔️'}
+                        {incident.type === 'earthquake' && '🌋'}
+                        {incident.type === 'sinkhole' && '🕳️'}
                         {incident.type === 'hazard' && '⚠️'}
                         {incident.type === 'all' && '📍'}
                       </div>
