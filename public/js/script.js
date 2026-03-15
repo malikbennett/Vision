@@ -147,6 +147,29 @@ let lastReportTime = 0;
 let recentReports = [];
 let cooldownTimer = null;
 
+// ========== REAL-TIME UPDATES (SOCKET.IO) ==========
+const socket = io();
+
+socket.on('connect', () => {
+  console.log('Connected to real-time updates server');
+});
+
+socket.on('new_incident', (incident) => {
+  // Check if we already have this incident (e.g. if we reported it ourselves)
+  if (!incidents.find(i => i.id === incident.id)) {
+    // Normalize and add to map
+    const normalized = {
+      ...incident,
+      locationName: incident.location_name,
+      created_at: incident.created_at
+    };
+    incidents.push(normalized);
+    addIncidentToMap(normalized);
+    // Optionally alert the user or show a notification
+    console.log('New real-time incident received:', normalized);
+  }
+});
+
 // ========== DOM ELEMENTS ==========
 
 const els = {

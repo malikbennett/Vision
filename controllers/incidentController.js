@@ -81,9 +81,14 @@ const createIncident = async (req, res) => {
             incident.locationName || null
         ]);
 
+        const createdIncident = newIncident.rows[0];
+
+        // Broadcast to all connected clients
+        req.io.emit('new_incident', createdIncident);
+
         res.status(201).json({
             message: 'Incident created successfully',
-            incident: newIncident.rows[0]
+            incident: createdIncident
         });
     } catch (error) {
         console.error('Error creating incident:', error);

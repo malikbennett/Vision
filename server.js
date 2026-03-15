@@ -14,7 +14,10 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieparser());
 
-app.use('/api/incidents', incidentRoutes);
+app.use('/api/incidents', (req, res, next) => {
+    req.io = io;
+    next();
+}, incidentRoutes);
 app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -42,7 +45,11 @@ const io = new Server(server, {
 })
 
 io.on('connection', (socket) => {
-    console.log('connected on server')
+    console.log(`User connected: ${socket.id}`);
+    
+    socket.on('disconnect', () => {
+        console.log(`User disconnected: ${socket.id}`);
+    });
 })
 
 server.on('error', (err) => {
