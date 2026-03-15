@@ -4,22 +4,12 @@ window.addEventListener('error', function (e) {
 });
 
 // ========== THEME MANAGEMENT ==========
-const themeToggleBtn = document.getElementById('themeToggleBtn');
 let currentTileLayer = null;
 let currentLabelLayer = null;
 
-function setTheme(isLight) {
+function applyMapTheme() {
+  const isLight = document.body.classList.contains('light-mode');
   try {
-    if (isLight) {
-      if (document.body) document.body.classList.add('light-mode');
-      if (themeToggleBtn) themeToggleBtn.textContent = '🌙';
-      localStorage.setItem('vision_theme', 'light');
-    } else {
-      if (document.body) document.body.classList.remove('light-mode');
-      if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
-      localStorage.setItem('vision_theme', 'dark');
-    }
-
     if (window.map) {
       if (currentTileLayer) window.map.removeLayer(currentTileLayer);
       if (currentLabelLayer) window.map.removeLayer(currentLabelLayer);
@@ -35,7 +25,7 @@ function setTheme(isLight) {
         attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 20,
-        pane: 'markerPane' // ensure it sits above the satellite imagery mostly
+        pane: 'markerPane'
       }).addTo(window.map);
 
       const tilePane = window.map.getPane('tilePane');
@@ -53,27 +43,6 @@ function setTheme(isLight) {
   } catch (e) {
     console.error('Theme Error:', e);
   }
-}
-
-// Initial theme setup
-try {
-  const savedTheme = localStorage.getItem('vision_theme');
-  // Default to light if no preference is found
-  if (savedTheme === 'dark') {
-    setTheme(false);
-  } else {
-    // This covers 'light' or null (new user)
-    setTheme(true);
-  }
-} catch (e) {
-  console.error('Theme Init Error:', e);
-}
-
-if (themeToggleBtn) {
-  themeToggleBtn.addEventListener('click', () => {
-    const isLight = !document.body.classList.contains('light-mode');
-    setTheme(isLight);
-  });
 }
 
 // ========== SCREEN NAVIGATION ==========
@@ -797,7 +766,7 @@ window.addEventListener("DOMContentLoaded", () => {
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   window.map = map;
 
-  setTheme(document.body.classList.contains('light-mode'));
+  applyMapTheme();
 
   map.on("click", (e) => openPanel(e.latlng));
 });
