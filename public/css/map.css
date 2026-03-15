@@ -5,7 +5,10 @@
 
 .app {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
 }
 
@@ -247,6 +250,50 @@ body.light-mode .logout-btn:hover {
 .search-box button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+.vote-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.vote-btn:hover {
+  background: var(--border);
+  transform: translateY(-1px);
+}
+
+.vote-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+
+.vote-icon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+.vote-btn:active .vote-icon {
+  transform: scale(1.4);
+}
+
+.vote-count {
+  font-weight: bold;
+}
+
+.leafet-popup-content-wrapper .popup-actions {
+  border-top: 1px solid var(--panel-border) !important;
+}
+
 @media (max-width: 480px) {
   .chip-row {
     padding: 8px;
