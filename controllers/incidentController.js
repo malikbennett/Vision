@@ -103,13 +103,7 @@ const createIncident = async (req, res) => {
 const upvoteIncident = async (req, res) => {
     try {
         const { id } = req.params; // incident id
-        const { user } = req.body;
-
-        if (!user.id) {
-            return res.status(400).json({
-                message: 'user_id is required'
-            });
-        }
+        const user_id = req.user.id; // from JWT
 
         // Check that the incident exists and is active
         const incidentCheck = await pool.query(`
@@ -129,7 +123,7 @@ const upvoteIncident = async (req, res) => {
             SELECT *
             FROM upvotes
             WHERE user_id = $1 AND incident_id = $2
-        `, [user.id, id]);
+        `, [user_id, id]);
 
         if (existingVote.rows.length > 0) {
             return res.status(400).json({
@@ -141,7 +135,7 @@ const upvoteIncident = async (req, res) => {
         await pool.query(`
             INSERT INTO upvotes (user_id, incident_id)
             VALUES ($1, $2)
-        `, [user.id, id]);
+        `, [user_id, id]);
 
         // Increment incident upvote_count
         const updatedIncident = await pool.query(`
@@ -151,12 +145,62 @@ const upvoteIncident = async (req, res) => {
             RETURNING *
         `, [id]);
 
+        const incident = updatedIncident.rows[0];
+
+        // Broadcast update to all connected clients
+        req.io.emit('incident_voted', incident);
+
         res.status(200).json({
             message: 'Incident upvoted successfully',
-            incident: updatedIncident.rows[0]
+            incident: incident
         });
     } catch (error) {
         console.error('Error upvoting incident:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// ======================================================
+// REMOVE UPVOTE (DOWNVOTE)
+// ======================================================
+const downvoteIncident = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user_id = req.user.id;
+
+        // Check if vote exists
+        const existingVote = await pool.query(`
+            SELECT * FROM upvotes WHERE user_id = $1 AND incident_id = $2
+        `, [user_id, id]);
+
+        if (existingVote.rows.length === 0) {
+            return res.status(400).json({ message: 'User has not upvoted this incident' });
+        }
+
+        // Delete from upvotes
+        await pool.query(`
+            DELETE FROM upvotes WHERE user_id = $1 AND incident_id = $2
+        `, [user_id, id]);
+
+        // Decrement incident upvote_count
+        const updatedIncident = await pool.query(`
+            UPDATE incidents
+            SET upvote_count = GREATEST(0, COALESCE(upvote_count, 0) - 1)
+            WHERE id = $1
+            RETURNING *
+        `, [id]);
+
+        const incident = updatedIncident.rows[0];
+
+        // Broadcast update
+        req.io.emit('incident_voted', incident);
+
+        res.status(200).json({
+            message: 'Upvote removed successfully',
+            incident: incident
+        });
+    } catch (error) {
+        console.error('Error removing upvote:', error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
@@ -194,5 +238,6 @@ module.exports = {
     getIncidentById,
     createIncident,
     upvoteIncident,
+    downvoteIncident,
     deleteIncident
 };

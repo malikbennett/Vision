@@ -172,6 +172,69 @@ if (typeof io !== 'undefined') {
       console.log('New real-time incident received:', normalized);
     }
   });
+
+  socket.on('incident_voted', (updatedIncident) => {
+    const idx = incidents.findIndex(i => i.id === updatedIncident.id);
+    if (idx !== -1) {
+      incidents[idx].upvote_count = updatedIncident.upvote_count;
+
+      // Update marker popup if it exists
+      const marker = markerById.get(updatedIncident.id);
+      if (marker) {
+        // Create normalized version for the popup helper
+        const normalized = {
+          ...incidents[idx],
+          locationName: incidents[idx].location_name || incidents[idx].locationName,
+        };
+
+        const wasOpen = marker.getPopup().isOpen();
+        marker.setPopupContent(makePopupHtml(normalized));
+        if (wasOpen) marker.openPopup();
+
+        // Update UI element if visible in an open popup
+        const countEl = document.getElementById(`vote-count-${updatedIncident.id}`);
+        if (countEl) countEl.textContent = updatedIncident.upvote_count || 0;
+      }
+    }
+  });
+
+  // ========== VOTING LOGIC ==========
+  async function toggleVote(incidentId) {
+    const btn = document.getElementById(`vote-btn-${incidentId}`);
+    if (!btn) return;
+
+    const isUpvoted = btn.classList.contains('active');
+    const method = isUpvoted ? 'DELETE' : 'POST';
+    const url = `/api/incidents/${incidentId}/upvote`;
+
+    btn.style.opacity = '0.5';
+    btn.style.pointerEvents = 'none';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // The socket listener 'incident_voted' will handle UI updates for everyone
+        // but we can toggle local state for immediate feedback
+        btn.classList.toggle('active', !isUpvoted);
+      } else {
+        const data = await response.json();
+        alert(data.message || 'Voting failed');
+      }
+    } catch (err) {
+      console.error('Vote error:', err);
+    } finally {
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    }
+  }
+
+  window.toggleVote = toggleVote; // Expose to HTML onclick
 }
 
 // ========== DOM ELEMENTS ==========
@@ -467,8 +530,6 @@ function renderSeverityButtons() {
   setSelectedSeverity(selectedSeverity);
 }
 
-// ========== MAP & MARKERS ==========
-
 function makePopupHtml(incident) {
   const t = typeMeta(incident.type);
   const imageHtml = incident.image
@@ -478,7 +539,7 @@ function makePopupHtml(incident) {
     : "";
 
   return `
-    <div style="min-width:200px">
+    <div id="popup-${incident.id}" style="min-width:200px">
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
         <span class="dot" style="background:${t.color}; width:12px; height:12px; border-radius:50%; display:inline-block;"></span>
         <strong style="font-size:14px; color:var(--text);">${t.label}</strong>
@@ -489,12 +550,20 @@ function makePopupHtml(incident) {
       <div style="margin-bottom:8px; font-size:13px; line-height:1.4; color:var(--text);">
         ${escapeHtml(incident.description)}
       </div>
-      <div style="color:var(--muted); font-size:11px;">
+      <div style="color:var(--muted); font-size:11px; margin-bottom:10px;">
         ${incident.locationName ? escapeHtml(incident.locationName) + '<br/>' : ''}
         ${incident.latitude.toFixed(5)}, ${incident.longitude.toFixed(5)}<br/>
         ${new Date(incident.created_at).toLocaleString()}
       </div>
       ${imageHtml}
+      
+      <div class="popup-actions" style="margin-top:12px; border-top: 1px solid var(--border); padding-top:10px; display:flex; align-items:center; justify-content:space-between;">
+        <button class="vote-btn" onclick="toggleVote(${incident.id})" id="vote-btn-${incident.id}" title="Upvote this report">
+          <span class="vote-icon">▲</span>
+          <span class="vote-count" id="vote-count-${incident.id}">${incident.upvote_count || 0}</span>
+        </button>
+        <span style="font-size:11px; color:var(--muted)">Verified by community</span>
+      </div>
     </div>
   `;
 }
