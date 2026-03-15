@@ -329,6 +329,50 @@ textarea {
 /* ========== RESPONSIVE ========== */
 
 @media (max-width: 480px) {
+  .panel {
+    top: 50px;
+    right: 10px;
+    width: calc(100% - 20px);
+    max-height: calc(100% - 60px);
+    border-radius: 14px;
+  }
+
+  .panel-header {
+    padding: 12px 14px 8px 14px;
+  }
+
+  .panel-body {
+    padding: 10px 14px 14px 14px;
+  }
+
+  .panel-title h2 {
+    font-size: 16px;
+  }
+
+  .section-label {
+    margin: 10px 0 6px 0;
+    font-size: 11px;
+  }
+
+  .seg-btn {
+    padding: 10px;
+    font-size: 13px;
+    min-width: 100px;
+  }
+
+  textarea {
+    min-height: 80px;
+  }
+
+  .actions {
+    margin-top: 10px;
+  }
+
+  .primary, .ghost {
+    padding: 10px;
+    font-size: 14px;
+  }
+
   #liveIndicator {
     font-size: 10px !important;
   }
