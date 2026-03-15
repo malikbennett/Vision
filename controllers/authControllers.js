@@ -16,14 +16,14 @@ const issueTokens = (res, payload) => {
         secure: isSecure,
         sameSite: isSecure ? 'None' : 'Lax',
         path: '/',
-        maxAge: 15 * 60 * 1000
+        maxAge: 31 * 24 * 60 * 60 * 1000
     })
     res.cookie('refresh', refreshToken, {
         httpOnly: true,
         secure: isSecure,
         sameSite: isSecure ? 'None' : 'Lax',
         path: '/',
-        maxAge: 7 * 24 * 60 * 60 * 1000
+        maxAge: 180 * 24 * 60 * 60 * 1000
     })
 }
 const handleRegistration = async (req, res) => {
