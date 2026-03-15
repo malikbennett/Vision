@@ -5,25 +5,9 @@ const router = express.Router();
 const pool = require('../config/postgres');
 const bcrypt = require('bcrypt');
 
-router.post('/api/auth/register', async (req, res) => {
-    try {
-        const { user } = req.body;
-        const hashedPassword = await bcrypt.hash(user.password, 10);
-        const { rows } = await pool.query(`
-            INSERT INTO users (email, display_name, password)
-            VALUES ($1, $2, $3)
-            RETURNING id, email, display_name;
-    `, [
-            user.email,
-            user.username,
-            hashedPassword
-        ]);
-        res.json(rows[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
+const { handleRegister } = require('../controllers/authControllers');
+
+router.post('/api/auth/register', handleRegister);
 
 router.post('/api/auth/login', async (req, res) => {
     try {
