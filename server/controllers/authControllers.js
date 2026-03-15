@@ -52,8 +52,8 @@ const handleLogin = async (req, res) => {
         const isMatch = await bcrypt.compare(user.password, rows[0].password)
         if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' })
         const payload = { id: rows[0].id, email: rows[0].email }
-        const accessToken = await bcrypt.hash(generateAccessToken(payload), 10)
-        const refreshToken = await bcrypt.hash(generateRefreshToken(payload), 10)
+        const accessToken = generateAccessToken(payload)
+        const refreshToken = generateRefreshToken(payload)
         res.cookie('token', accessToken, {
             httpOnly: true,
             secure: true,
