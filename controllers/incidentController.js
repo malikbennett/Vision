@@ -69,9 +69,10 @@ const createIncident = async (req, res) => {
                 latitude,
                 longitude,
                 severity,
-                location_name
+                location_name,
+                expires_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() + INTERVAL '24 hours')
             RETURNING *
         `, [
             user_id,
