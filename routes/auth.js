@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-// Middlewares already applied in server.js, removing redundant calls here
 const pool = require('../config/postgres');
 const bcrypt = require('bcrypt');
 
@@ -12,7 +11,6 @@ router.post('/register', handleRegistration);
 router.post('/login', handleLogin);
 
 router.get('/me', authenticateAccessToken, (req, res) => {
-    // If the middleware passes, the user is authenticated.
     res.status(200).json({ isAuthenticated: true, user: req.user });
 });
 

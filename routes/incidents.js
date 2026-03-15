@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-// Middlewares already applied in server.js, removing redundant calls here
 const pool = require('../config/postgres');
-const upload = require('../config/mutler'); // User has a typo in filename 'mutler.js'
+const upload = require('../config/mutler');
 
 const {
     getAllIncidents,

@@ -10,10 +10,11 @@ const crypto = require('crypto');
 const getAllIncidents = async (req, res) => {
     try {
         const incidents = await pool.query(`
-            SELECT *
-            FROM incidents
-            WHERE is_active = true
-            ORDER BY created_at DESC
+            SELECT i.*, u.username
+            FROM incidents i
+            JOIN users u ON i.user_id = u.id
+            WHERE i.is_active = true
+            ORDER BY i.created_at DESC
         `);
 
         res.status(200).json(incidents.rows);
@@ -31,9 +32,10 @@ const getIncidentById = async (req, res) => {
         const { id } = req.params;
 
         const incident = await pool.query(`
-            SELECT *
-            FROM incidents
-            WHERE id = $1
+            SELECT i.*, u.username
+            FROM incidents i
+            JOIN users u ON i.user_id = u.id
+            WHERE i.id = $1
         `, [id]);
 
         if (incident.rows.length === 0) {
@@ -107,7 +109,7 @@ const createIncident = async (req, res) => {
                 const { data: { publicUrl } } = supabase.storage
                     .from('incident-images')
                     .getPublicUrl(filePath);
-                
+
                 imageUrl = publicUrl;
 
                 // Update the incident with the image URL
@@ -115,9 +117,13 @@ const createIncident = async (req, res) => {
             }
         }
 
-        const finalIncident = (await pool.query('SELECT * FROM incidents WHERE id = $1', [createdIncidentId])).rows[0];
+        const finalIncident = (await pool.query(`
+            SELECT i.*, u.username
+            FROM incidents i
+            JOIN users u ON i.user_id = u.id
+            WHERE i.id = $1
+        `, [createdIncidentId])).rows[0];
 
-        // Broadcast to all connected clients
         req.io.emit('new_incident', finalIncident);
 
         res.status(201).json({
@@ -172,14 +178,15 @@ const upvoteIncident = async (req, res) => {
         `, [user_id, id]);
 
         // Increment incident upvote_count
-        const updatedIncident = await pool.query(`
-            UPDATE incidents
-            SET upvote_count = COALESCE(upvote_count, 0) + 1
-            WHERE id = $1
-            RETURNING *
+        // Fetch full data with username for broadcast
+        const incidentRows = await pool.query(`
+            SELECT i.*, u.username
+            FROM incidents i
+            JOIN users u ON i.user_id = u.id
+            WHERE i.id = $1
         `, [id]);
 
-        const incident = updatedIncident.rows[0];
+        const incident = incidentRows.rows[0];
 
         // Broadcast update to all connected clients
         req.io.emit('incident_voted', incident);
@@ -217,14 +224,15 @@ const downvoteIncident = async (req, res) => {
         `, [user_id, id]);
 
         // Decrement incident upvote_count
-        const updatedIncident = await pool.query(`
-            UPDATE incidents
-            SET upvote_count = GREATEST(0, COALESCE(upvote_count, 0) - 1)
-            WHERE id = $1
-            RETURNING *
+        // Fetch full data with username for broadcast
+        const incidentRows = await pool.query(`
+            SELECT i.*, u.username
+            FROM incidents i
+            JOIN users u ON i.user_id = u.id
+            WHERE i.id = $1
         `, [id]);
 
-        const incident = updatedIncident.rows[0];
+        const incident = incidentRows.rows[0];
 
         // Broadcast update
         req.io.emit('incident_voted', incident);

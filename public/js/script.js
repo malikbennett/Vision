@@ -523,6 +523,7 @@ function makePopupHtml(incident) {
       <div style="color:var(--muted); font-size:11px; margin-bottom:10px;">
         ${incident.locationName ? escapeHtml(incident.locationName) + '<br/>' : ''}
         ${incident.latitude.toFixed(5)}, ${incident.longitude.toFixed(5)}<br/>
+        Reported by: <strong>${escapeHtml(incident.username || 'Community Member')}</strong><br/>
         ${new Date(incident.created_at).toLocaleString()}
       </div>
       ${imageHtml}

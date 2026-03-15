@@ -26,12 +26,10 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 const authenticateAccessToken = require('./middleware/authenticateAccessToken');
 const path = require('path');
 
-// Protect specifically map.html
 app.get('/map.html', authenticateAccessToken, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'map.html'));
 });
 
-// Serve other static assets
 app.use(express.static('public'))
 
 const server = require('http').createServer(app)
@@ -47,7 +45,7 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
-    
+
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
     });

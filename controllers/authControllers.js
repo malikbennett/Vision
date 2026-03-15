@@ -81,7 +81,7 @@ const handleRefreshToken = async (refresh) => {
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
                     path: '/',
-                    maxAge: 31 * 24 * 60 * 60 * 1000 // Match 31d access token
+                    maxAge: 31 * 24 * 60 * 60 * 1000
                 }
             },
             status: 201,
